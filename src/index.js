@@ -34,10 +34,24 @@ let minecraftProcess = null
 app.post("/run", async (req, res) => {
   if (minecraftProcess) return res.json({ status: 'already running' })
 
-  minecraftProcess = spawn('java', ['-Xmx4G', '-Xms4G', '-jar', 'server.jar', 'nogui'], {
+  const lockFile = '/app/mcsv/world/session.lock'
+  if (fs.existsSync(lockFile)) {
+    io.emit('log', '⚠️ Servidor ya está corriendo, eliminando lock y reconectando...\r\n')
+    try {
+      fs.unlinkSync(lockFile)
+    } catch (e) {
+      io.emit('log', `Error eliminando lock: ${e.message}\r\n`)
+      return res.status(500).json({ status: 'error', message: 'No se pudo eliminar el lock' })
+    }
+  }
+
+  minecraftProcess = spawn('java', ['-Xmx4G', '-Xms4G', '--enable-native-access=ALL-UNNAMED', '-jar', 'server.jar', 'nogui'], {
     cwd: '/app/mcsv',
-    env: javaEnv
+    env: javaEnv,
+    stdio: ['pipe', 'pipe', 'pipe']
   })
+
+  io.emit('log', '🚀 Iniciando servidor...\r\n')
 
   minecraftProcess.stdout.on('data', (data) => {
     io.emit('log', data.toString())
@@ -47,22 +61,15 @@ app.post("/run", async (req, res) => {
     io.emit('log', data.toString())
   })
 
+  minecraftProcess.stdout.setEncoding('utf8')
+  minecraftProcess.stderr.setEncoding('utf8')
+
   minecraftProcess.on('close', () => {
-    io.emit('log', 'Servidor detenido.')
+    io.emit('log', 'Servidor detenido.\r\n')
     minecraftProcess = null
   })
 
   res.json({ status: 'started' })
-})
-
-app.post('/stop', (req, res) => {
-  if (!minecraftProcess) return res.json({ status: 'not running' })
-  minecraftProcess.kill()
-  res.json({ status: 'stopped' })
-})
-
-io.on('connection', (socket) => {
-  socket.emit('log', 'Conectado a la consola...')
 })
 
 app.post("/install", async (req, res) => {
@@ -77,6 +84,31 @@ app.post("/install", async (req, res) => {
   } catch (error) {
     console.error("Error installing server:", error)
     res.status(500).send("Error installing server")
+  }
+})
+
+app.post("/stop", (req, res) => {
+  const lockFile = '/app/mcsv/world/session.lock'
+
+  const cleanup = () => {
+    exec('fuser -k 25565/tcp', () => {
+      if (fs.existsSync(lockFile)) {
+        fs.unlinkSync(lockFile)
+        io.emit('log', '🔓 Lock eliminado\r\n')
+      }
+      io.emit('log', '🛑 Servidor detenido\r\n')
+      res.json({ status: 'stopped' })
+    })
+  }
+
+  if (minecraftProcess) {
+    minecraftProcess.on('close', () => {
+      minecraftProcess = null
+      cleanup()
+    })
+    minecraftProcess.kill('SIGTERM')
+  } else {
+    cleanup()
   }
 })
 

@@ -29,6 +29,7 @@
             // Terminal
             const term = new Terminal({
                 cursorBlink: true,
+                scrollback: Infinity,
                 theme: {
                     background: '#0d1117',
                     foreground: '#c9d1d9',
@@ -47,6 +48,7 @@
             const socket = io()
             socket.on('log', (msg) => {
                 term.write(msg.replace(/\n/g, '\r\n'))
+                term.scrollToBottom()
             })
 
             // Botones
