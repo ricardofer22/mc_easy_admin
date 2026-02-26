@@ -5,18 +5,62 @@
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title></title>
         <link href="css/style.css" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm/css/xterm.css" />
+        <style>
+            #terminal {
+                margin-top: 20px;
+                border-radius: 8px;
+                overflow: hidden;
+            }
+        </style>
     </head>
-    <script>
-        const runServer = async () => {
-            const response = await fetch("http://localhost:3000/run")
-        }
-        const installServer = async () => {
-            const response = await fetch("http://localhost:3000/install")
-        }
-    </script>
     <body>
         <h1>MC EASY ADMIN</h1>
         <button type="button" onclick="runServer()">Run!</button>
+        <button type="button" onclick="stopServer()">Stop</button>
         <button type="button" onclick="installServer()">Install</button>
+
+        <div id="terminal"></div>
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm/lib/xterm.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit/lib/addon-fit.js"></script>
+        <script>
+            // Terminal
+            const term = new Terminal({
+                cursorBlink: true,
+                theme: {
+                    background: '#0d1117',
+                    foreground: '#c9d1d9',
+                },
+                fontSize: 14,
+                fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+            })
+
+            const fitAddon = new FitAddon.FitAddon()
+            term.loadAddon(fitAddon)
+            term.open(document.getElementById('terminal'))
+            fitAddon.fit()
+            window.addEventListener('resize', () => fitAddon.fit())
+
+            // Socket
+            const socket = io()
+            socket.on('log', (msg) => {
+                term.write(msg.replace(/\n/g, '\r\n'))
+            })
+
+            // Botones
+            const runServer = () => {
+                fetch("/run", { method: 'POST' })
+            }
+
+            const stopServer = () => {
+                fetch('/stop', { method: 'POST' })
+            }
+
+            const installServer = async () => {
+                const response = await fetch("/install", { method: 'POST' })
+            }
+        </script>
     </body>
 </html>
