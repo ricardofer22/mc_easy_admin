@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title></title>
-    <link href="css/style.css" rel="stylesheet">
-  </head>
-  <script>
-    const runServer = async () => {
-      const response = await fetch("http://localhost:3000/run")
-    }
-  </script>
-  <body>
-    <h1>MC EASY ADMIN</h1>
-    <button type="button" onclick=runServer()>Run!</button>
-  </body>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title></title>
+        <link href="css/style.css" rel="stylesheet" />
+    </head>
+    <script>
+        const runServer = async () => {
+            const response = await fetch("http://localhost:3000/run")
+        }
+        const installServer = async () => {
+            const response = await fetch("http://localhost:3000/install")
+        }
+    </script>
+    <body>
+        <h1>MC EASY ADMIN</h1>
+        <button type="button" onclick="runServer()">Run!</button>
+        <button type="button" onclick="installServer()">Install</button>
+    </body>
 </html>
