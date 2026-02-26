@@ -1,0 +1,33 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalar Java 25
+RUN wget https://aka.ms/download-jdk/microsoft-jdk-25-linux-x64.tar.gz -O /tmp/jdk25.tar.gz && \
+    mkdir -p /usr/local/java && \
+    tar -xzf /tmp/jdk25.tar.gz -C /usr/local/java && \
+    rm /tmp/jdk25.tar.gz
+
+ENV JAVA_HOME=/usr/local/java/jdk-25
+ENV PATH=$JAVA_HOME/bin:$PATH
+
+# Instalar Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs
+
+RUN npm install -g nodemon
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev"]
